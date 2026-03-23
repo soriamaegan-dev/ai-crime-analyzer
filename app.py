@@ -709,6 +709,77 @@ def _make_pdf(text):
     return tmp.name
 
 
+# ─── Tab 9: AI Data Chat ─────────────────────────────────────────────────────
+
+_chat_df = None
+
+
+def upload_chat_data(file):
+    global _chat_df
+    if file is None:
+        _chat_df = None
+        return "No file uploaded."
+    df, err = load_data(file)
+    if err and df is None:
+        return err
+    _chat_df = df
+    return f"Data loaded: {len(df)} rows × {len(df.columns)} columns\nColumns: {list(df.columns)}"
+
+
+def chat_with_data(message, history):
+    global _chat_df
+
+    data_context = ""
+    if _chat_df is not None:
+        desc = _chat_df.describe(include="all").to_string()
+        preview = _chat_df.head(10).to_string()
+        data_context = f"""
+The user has uploaded crime/law enforcement data with the following properties:
+Shape: {_chat_df.shape}
+Columns: {list(_chat_df.columns)}
+Statistical Summary:
+{desc}
+First 10 rows:
+{preview}
+"""
+    else:
+        data_context = "No data uploaded yet. Answer general law enforcement and crime analysis questions."
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an expert law enforcement data analyst and AI assistant. "
+                "Help users analyze their crime data, identify patterns, answer questions, "
+                "generate SQL queries, and provide Python code examples when asked. "
+                "Be precise, professional, and helpful. Always remind users not to include "
+                "personally identifiable information in their questions.\n\n" + data_context
+            )
+        }
+    ]
+    for user_msg, bot_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": bot_msg})
+    messages.append({"role": "user", "content": message})
+
+    API_URL = "https://router.huggingface.co/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
+    payload = {
+        "model": "Qwen/Qwen2.5-72B-Instruct",
+        "messages": messages,
+        "max_tokens": 2000,
+        "temperature": 0.3
+    }
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=240)
+        result = response.json()
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+        return f"API Error: {result}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
 # ─── Gradio UI ────────────────────────────────────────────────────────────────
 
 with gr.Blocks(title="AI Law Enforcement & Crime Analyzer", theme=gr.themes.Base()) as demo:
@@ -858,6 +929,33 @@ with gr.Blocks(title="AI Law Enforcement & Crime Analyzer", theme=gr.themes.Base
                     t8_output = gr.Markdown(label="Report Preview")
             t8_btn.click(generate_report, inputs=[t8_file, t8_type],
                          outputs=[t8_output, t8_download])
+
+        # ── Tab 9 ──────────────────────────────────────────────────────────────
+        with gr.Tab("💬 AI Data Chat"):
+            gr.Markdown("## Chat With Your Crime Data")
+            gr.Markdown(PII_WARNING)
+            with gr.Row():
+                with gr.Column(scale=1):
+                    t9_file = gr.File(label="Upload Data for Context (CSV/Excel)",
+                                      file_types=[".csv", ".xlsx", ".xls"])
+                    t9_upload_btn = gr.Button("📤 Load Data", variant="secondary")
+                    t9_data_status = gr.Markdown()
+                with gr.Column(scale=2):
+                    t9_chatbot = gr.ChatInterface(
+                        fn=chat_with_data,
+                        examples=[
+                            "What are the most common crime types in this dataset?",
+                            "Which location has the highest crime frequency?",
+                            "What time of day do most crimes occur?",
+                            "Generate a SQL query to find the top 10 highest crime areas",
+                            "Write Python code to identify seasonal crime patterns",
+                            "Are there any suspicious patterns or anomalies in this data?",
+                            "What is the month with the highest crime rate?",
+                        ],
+                        title="",
+                    )
+            t9_upload_btn.click(upload_chat_data, inputs=[t9_file],
+                                outputs=[t9_data_status])
 
     gr.Markdown(WATERMARK)
 
