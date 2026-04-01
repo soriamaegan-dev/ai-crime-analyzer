@@ -26,15 +26,15 @@ DISCLAIMER = """
 > **LEGAL DISCLAIMER**: This tool is AI-generated for law enforcement planning purposes only.
 > All predictions and analyses must be verified by qualified law enforcement professionals.
 > Do not make arrest or prosecution decisions based solely on AI output.
-> Copyright 2026 Maegan Soria. All Rights Reserved. Proprietary Software.
+> © 2026 Existential Gateway, LLC. All Rights Reserved. Proprietary Software.
 """
 
 WAIT_MSG = "*Results take approximately 1-2 minutes to generate. Please do not click multiple times.*"
 
 WATERMARK = """
 ---
-Copyright 2026 Maegan Soria | AI Law Enforcement and Crime Analyzer
-Unauthorized reproduction strictly prohibited. Licensing: soria.maegan@gmail.com
+© 2026 Existential Gateway, LLC | AI Law Enforcement and Crime Analyzer
+Unauthorized reproduction strictly prohibited. Licensing: existentialgateway@gmail.com
 ---
 """
 
@@ -47,16 +47,12 @@ PII_WARNING = """
 
 
 def query_llm(prompt):
-    API_URL = "https://router.huggingface.co/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
-    payload = {
-        "model": "Qwen/Qwen2.5-72B-Instruct",
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 2000,
-        "temperature": 0.3
-    }
+    API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    msgs = messages if 'messages' in dir() else [{"role": "user", "content": prompt}]
+    payload = {"model": "gpt-4o-mini", "max_tokens": 2000, "messages": msgs}
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=240)
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=240)
         result = response.json()
         if "choices" in result:
             return result["choices"][0]["message"]["content"]
@@ -97,11 +93,12 @@ def analyze_overview(file):
         if "Unsupported" in err or "Error loading" in err:
             return err, "", ""
         text_preview = err[:3000]
-        prompt = f"""You are an expert crime data analyst. The user uploaded a PDF crime report.
+        prompt = f"""You are an expert crime data analyst. The user uploaded a PDF crime report. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+
 Content (truncated):
 {text_preview}
 
-Provide a structured overview:
+Present your professional findings:
 1. What type of crime report or dataset is this?
 2. Key data elements and fields present
 3. Geographic area and date range covered
@@ -119,7 +116,8 @@ Provide a structured overview:
     missing_str = missing[missing > 0].to_string() if missing.any() else "None"
     preview = df.head(10).to_string()
 
-    prompt = f"""You are an expert crime data analyst. Analyze this crime dataset overview:
+    prompt = f"""You are an expert crime data analyst. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ Analyze this crime dataset overview:
 
 Rows: {rows} | Columns: {cols}
 Column types:\n{dtypes}
@@ -156,7 +154,8 @@ def analyze_patterns(file):
     prompt = f"""You are an expert crime analyst. Analyze this crime incident dataset for patterns:
 
 Shape: {rows} rows x {cols} columns
-Columns: {list(df.columns)}
+Columns: {list(df. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+columns)}
 Statistical Summary:\n{desc}
 Sample Data:\n{preview}
 
@@ -215,7 +214,8 @@ def analyze_predictive(file):
     preview = df.head(20).to_string()
     desc = df.describe(include="all").to_string()
 
-    prompt = f"""You are an expert predictive crime analyst. Analyze this historical crime data and generate predictions:
+    prompt = f"""You are an expert predictive crime analyst. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ Analyze this historical crime data and generate predictions:
 
 Shape: {rows} rows x {cols} columns
 Columns: {list(df.columns)}
@@ -273,7 +273,8 @@ def analyze_correlation(file):
 {err[:3000]}
 
 Identify:
-1. **Case Links** — connections between incidents
+1. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ **Case Links** — connections between incidents
 2. **MO Patterns** — similar modus operandi across cases
 3. **Geographic Connections** — location-based links
 4. **Timeline Correlations** — temporal patterns across cases
@@ -287,7 +288,8 @@ Identify:
     preview = df.head(30).to_string()
     desc = df.describe(include="all").to_string()
 
-    prompt = f"""You are an expert criminal investigator and crime analyst. Analyze this case data for correlations:
+    prompt = f"""You are an expert criminal investigator and crime analyst. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ Analyze this case data for correlations:
 
 Shape: {rows} rows x {cols} columns
 Columns: {list(df.columns)}
@@ -339,7 +341,8 @@ def analyze_recidivism(file):
     preview = df.head(20).to_string()
     desc = df.describe(include="all").to_string()
 
-    prompt = f"""You are an expert criminologist specializing in recidivism analysis. Analyze this offender data:
+    prompt = f"""You are an expert criminologist specializing in recidivism analysis. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ Analyze this offender data:
 
 Shape: {rows} rows x {cols} columns
 Columns: {list(df.columns)}
@@ -403,7 +406,8 @@ def analyze_resources(file):
     preview = df.head(20).to_string()
     desc = df.describe(include="all").to_string()
 
-    prompt = f"""You are an expert law enforcement resource analyst. Analyze this staffing and incident data:
+    prompt = f"""You are an expert law enforcement resource analyst. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ Analyze this staffing and incident data:
 
 Shape: {rows} rows x {cols} columns
 Columns: {list(df.columns)}
@@ -531,7 +535,8 @@ def generate_report(file, report_type):
     else:
         data_summary = err[:3000]
 
-    prompt = f"""You are an expert law enforcement analyst writing a professional report.
+    prompt = f"""You are an expert law enforcement analyst writing a professional report. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+
 Analyze this crime data and produce a complete {report_type}:
 
 {data_summary}
@@ -656,7 +661,7 @@ def _make_pptx(text, df):
     p.font.bold = True
     p.font.color.rgb = RGBColor(231, 76, 60)
     p2 = tf.add_paragraph()
-    p2.text = "Copyright 2026 Maegan Soria | AI Law Enforcement and Crime Analyzer"
+    p2.text = "© 2026 Existential Gateway, LLC | AI Law Enforcement and Crime Analyzer"
     p2.font.size = Pt(14)
     p2.font.color.rgb = RGBColor(160, 160, 200)
 
@@ -703,7 +708,7 @@ def _make_pdf(text):
 
     story.append(Spacer(1, 0.3 * inch))
     story.append(Paragraph(
-        "Copyright 2026 Maegan Soria | AI Law Enforcement and Crime Analyzer | soria.maegan@gmail.com",
+        "© 2026 Existential Gateway, LLC | AI Law Enforcement and Crime Analyzer | existentialgateway@gmail.com",
         ParagraphStyle("footer", parent=styles["Normal"], fontSize=9, textColor=colors.grey)))
     doc.build(story)
     return tmp.name
@@ -749,9 +754,10 @@ First 10 rows:
         {
             "role": "system",
             "content": (
-                "You are an expert law enforcement data analyst and AI assistant. "
-                "Help users analyze their crime data, identify patterns, answer questions, "
-                "generate SQL queries, and provide Python code examples when asked. "
+                "You are an expert law enforcement data analyst and AI assistant. Write as the professional analyst who performed this work. State all findings directly with specific numbers, percentages, and comparisons. NEVER say 'this appears to be', 'the data seems to show', 'the dataset contains', or 'it looks like'. Instead, deliver results confidently: 'Average claim cost was $4,230, a 12% increase year-over-year' or 'Readmission rates of 18.3% in Cardiology exceeded the facility average by 4.1 percentage points.' Be direct, precise, and actionable. Present findings as YOUR analysis, not a description of a dataset.
+ "
+                "When asked a question, deliver the answer immediately with specific numbers. Do NOT explain how to calculate. Analyze their crime data, identify patterns, answer questions, "
+                "provide specific computed answers with actual numbers from the data when asked. "
                 "Be precise, professional, and helpful. Always remind users not to include "
                 "personally identifiable information in their questions.\n\n" + data_context
             )
@@ -762,16 +768,13 @@ First 10 rows:
         messages.append({"role": "assistant", "content": bot_msg})
     messages.append({"role": "user", "content": message})
 
-    API_URL = "https://router.huggingface.co/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
-    payload = {
-        "model": "Qwen/Qwen2.5-72B-Instruct",
-        "messages": messages,
-        "max_tokens": 2000,
-        "temperature": 0.3
-    }
+    import os
+    API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    msgs = messages if 'messages' in dir() else [{"role": "user", "content": prompt}]
+    payload = {"model": "gpt-4o-mini", "max_tokens": 2000, "messages": msgs}
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=240)
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=240)
         result = response.json()
         if "choices" in result:
             return result["choices"][0]["message"]["content"]
@@ -782,7 +785,62 @@ First 10 rows:
 
 # ─── Gradio UI ────────────────────────────────────────────────────────────────
 
-with gr.Blocks(title="AI Law Enforcement & Crime Analyzer", theme=gr.themes.Base()) as demo:
+with gr.Blocks(title="AI Law Enforcement & Crime Analyzer", theme=gr.themes.Base(
+        primary_hue=gr.themes.colors.Color(
+            c50="#fef9ec", c100="#faefd0", c200="#f4dea0", c300="#edc970",
+            c400="#e4b04a", c500="#c9a84c", c600="#a8872e", c700="#856519",
+            c800="#5e440d", c900="#3a2a05", c950="#1e1502"
+        ),
+        secondary_hue=gr.themes.colors.Color(
+            c50="#e8edf5", c100="#c5d0e6", c200="#9eb0d4", c300="#7490c2",
+            c400="#4f74b0", c500="#2d5a9e", c600="#1a3a6e", c700="#112240",
+            c800="#0a1628", c900="#060e1a", c950="#03070d"
+        ),
+        neutral_hue=gr.themes.colors.Color(
+            c50="#f0f2f7", c100="#d8dde9", c200="#b8c2d6", c300="#95a3be",
+            c400="#7285a6", c500="#536890", c600="#3a4f73", c700="#263856",
+            c800="#162438", c900="#0c1622", c950="#060b11"
+        ),
+        font=gr.themes.GoogleFont("DM Sans"),
+        font_mono=gr.themes.GoogleFont("DM Mono"),
+    ).set(
+        body_background_fill="#0a1628",
+        body_background_fill_dark="#0a1628",
+        body_text_color="#f8f9fc",
+        body_text_color_dark="#f8f9fc",
+        block_background_fill="#112240",
+        block_background_fill_dark="#112240",
+        block_border_color="rgba(201,168,76,0.2)",
+        block_border_color_dark="rgba(201,168,76,0.2)",
+        block_label_background_fill="#112240",
+        block_label_background_fill_dark="#112240",
+        block_label_text_color="#c9a84c",
+        block_label_text_color_dark="#c9a84c",
+        block_title_text_color="#c9a84c",
+        block_title_text_color_dark="#c9a84c",
+        button_primary_background_fill="linear-gradient(135deg,#c9a84c,#e8c96a)",
+        button_primary_background_fill_dark="linear-gradient(135deg,#c9a84c,#e8c96a)",
+        button_primary_text_color="#0a1628",
+        button_primary_text_color_dark="#0a1628",
+        button_secondary_background_fill="#112240",
+        button_secondary_background_fill_dark="#112240",
+        button_secondary_border_color="rgba(201,168,76,0.3)",
+        button_secondary_border_color_dark="rgba(201,168,76,0.3)",
+        button_secondary_text_color="#c9a84c",
+        button_secondary_text_color_dark="#c9a84c",
+        input_background_fill="#0a1628",
+        input_background_fill_dark="#0a1628",
+        input_border_color="rgba(201,168,76,0.2)",
+        input_border_color_dark="rgba(201,168,76,0.2)",
+        input_placeholder_color="#8892a4",
+        input_placeholder_color_dark="#8892a4",
+        shadow_drop="0 4px 24px rgba(0,0,0,0.4)",
+        shadow_drop_lg="0 8px 40px rgba(0,0,0,0.5)",
+        table_even_background_fill="#0a1628",
+        table_even_background_fill_dark="#0a1628",
+        table_odd_background_fill="#112240",
+        table_odd_background_fill_dark="#112240",
+    )) as demo:
     gr.Markdown("# 🚔 AI Law Enforcement & Crime Analyzer")
     gr.Markdown(DISCLAIMER)
 
@@ -961,4 +1019,4 @@ with gr.Blocks(title="AI Law Enforcement & Crime Analyzer", theme=gr.themes.Base
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=True)
+    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("GRADIO_SERVER_PORT", 7860)), share=False, ssr_mode=False)
