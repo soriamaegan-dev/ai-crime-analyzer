@@ -1,12 +1,6 @@
 # AI Law Enforcement & Crime Analyzer
 ### AI-Powered Crime Data Analysis for Law Enforcement Professionals
 
-🚀 **[Try the Live Demo](https://huggingface.co/spaces/Mae-Mae/ai-crime-analyzer)**
-
----
-
-⏱️ **IMPORTANT:** Please allow 1-2 minutes for results to generate. The AI is performing a comprehensive multi-step analysis. Do not click the Analyze button multiple times.
-
 ---
 
 ## ⚠️ Proprietary Software Notice
